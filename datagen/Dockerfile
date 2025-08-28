@@ -22,9 +22,11 @@ RUN python -m pip install --upgrade pip && \
 # Copy source
 COPY app/ /app/app
 
-# Non-root user + data dir for SQLite
-RUN useradd -m appuser && mkdir -p /data && chown -R appuser:appuser /data /app
-USER appuser
+# Create data directory and make it writable by 'nobody'
+RUN mkdir -p /data && chown -R nobody:nogroup /data /app
+
+# Switch to nobody user
+USER nobody:nogroup
 
 EXPOSE 8000
 
