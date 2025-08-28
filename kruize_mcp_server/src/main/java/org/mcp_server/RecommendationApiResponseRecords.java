@@ -15,6 +15,7 @@ public final class RecommendationApiResponseRecords {
     public record FinalCostResult(
             String namespace,
             Optional<String> containerName,
+            List<Notification> notifications,
             ResourceGroup currentUsage,
             List<CostRecommendation> costRecommendations
     ) {}
@@ -47,9 +48,11 @@ public final class RecommendationApiResponseRecords {
             @JsonProperty("recommendation_engines") Map<String, RecommendationEngine> recommendationEngines
     ) {}
 
+    public record Notification(String type, String message, int code) {}
+
     public record RecommendationData(
             String version,
-            Map<String, Object> notifications,
+            Map<String, Notification> notifications,
             Map<String, TimestampData> data
     ) {}
 

@@ -73,20 +73,20 @@ public class KruizeTools {
             List<Recommendations> apiResponse = apiClient.getCostOptimizedRecommendations(experiment_name);
 
             List<FinalCostResult> allFinalResults = apiResponse.stream()
-                    .flatMap(experiment -> Optional.ofNullable(experiment.kubernetesObjects()).orElse(Collections.emptyList()).stream())
-                    .flatMap(kubeObject -> {
+                    .flatMap(recommendations -> Optional.ofNullable(recommendations.kubernetesObjects()).orElse(Collections.emptyList()).stream())
+                    .flatMap(k8sObject -> {
                         // Create a stream of RecommendationSource from containers
                         // Stream from containers
-                        Stream<RecommendationSource> fromContainers = kubeObject.containers()
+                        Stream<RecommendationSource> fromContainers = k8sObject.containers()
                                 .orElse(Collections.emptyList()).stream()
                                 .map(c -> new RecommendationSource(
-                                        kubeObject.namespace(),
+                                        k8sObject.namespace(),
                                         Optional.of(c.containerName()),
                                         c.recommendations()
                                 ));
 
                         // Stream from namespaces
-                        Stream<RecommendationSource> fromNamespaces = kubeObject.namespaces().stream()
+                        Stream<RecommendationSource> fromNamespaces = k8sObject.namespaces().stream()
                                 .map(n -> new RecommendationSource(
                                         n.namespace(),
                                         Optional.empty(),
@@ -100,13 +100,34 @@ public class KruizeTools {
                         // Now, process the unified 'source' object
                         if (source.recommendations().isEmpty()) return null;
 
+                        List<Notification> notifications = Optional.ofNullable(source.recommendations.get().notifications())
+                                .map(map -> List.copyOf(map.values()))
+                                .orElse(Collections.emptyList());
+
+
                         Map<String, TimestampData> dataMap = source.recommendations().get().data();
-                        if (dataMap == null || dataMap.isEmpty()) return null;
+                        if (dataMap == null || dataMap.isEmpty()) {
+                            return new FinalCostResult(
+                                    source.parentNamespace(),
+                                    source.sourceName(),
+                                    notifications,
+                                    null,
+                                    Collections.emptyList() // No cost recommendations
+                            );
+                        }
 
                         TimestampData timestampData = dataMap.values().iterator().next();
                         ResourceGroup currentUsage = timestampData.current();
                         Map<String, RecommendationTerm> recommendationTerms = timestampData.recommendationTerms();
-                        if (recommendationTerms == null) return null;
+                        if (recommendationTerms == null) {
+                            return new FinalCostResult(
+                                    source.parentNamespace(),
+                                    source.sourceName(),
+                                    notifications,
+                                    currentUsage,
+                                    Collections.emptyList() // No currentUsage
+                            );
+                        }
 
                         List<CostRecommendation> costRecs = recommendationTerms.entrySet().stream()
                                 .map(termEntry -> {
@@ -126,7 +147,7 @@ public class KruizeTools {
                                 .collect(Collectors.toList());
 
                         // Use the data from the unified 'source' object
-                        return new FinalCostResult(source.parentNamespace(), source.sourceName(), currentUsage, costRecs);
+                        return new FinalCostResult(source.parentNamespace(), source.sourceName(), notifications, currentUsage, costRecs);
                     })
                     .filter(java.util.Objects::nonNull)
                     .collect(Collectors.toList());
@@ -134,7 +155,6 @@ public class KruizeTools {
             return objectMapper.writeValueAsString(allFinalResults);
 
         } catch (Exception e) {
-            e.printStackTrace();
             return "{\"error\": \"An unexpected error occurred: " + e.getMessage() + "\"}";
         }
     }
