@@ -14,20 +14,28 @@ public final class RecommendationApiResponseRecords {
     // --- Final, clean output format ---
     public record FinalCostResult(
             String namespace,
+            @JsonProperty("container_name")
             Optional<String> containerName,
             List<Notification> notifications,
+
+            @JsonProperty("current")
             ResourceGroup currentUsage,
+
+            @JsonProperty("cost")
             List<CostRecommendation> costRecommendations
     ) {}
 
 
     public record TimestampData(
             ResourceGroup current,
-            @JsonProperty("recommendation_terms") Map<String, RecommendationTerm> recommendationTerms
+            @JsonProperty("recommendation_terms")
+            Map<String, RecommendationTerm> recommendationTerms
     ) {}
 
     public record CostRecommendation(
             String term,
+
+            @JsonProperty("duration_in_hours")
             int durationInHours,
             Optional<ResourceGroup> config,
             Optional<ResourceGroup> variation
@@ -40,7 +48,8 @@ public final class RecommendationApiResponseRecords {
 
     public record RecommendationEngine(
             ResourceGroup config,
-            ResourceGroup variation
+            ResourceGroup variation,
+             Map<String, Notification> notifications
     ) {}
 
     public record RecommendationTerm(
