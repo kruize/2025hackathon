@@ -104,7 +104,3 @@ OpenAPI docs: http://localhost:8000/docs
 ```bash
 curl -s localhost:8000/healthz | jq
 ```
-
-## License
-
-MIT (or your choice)
