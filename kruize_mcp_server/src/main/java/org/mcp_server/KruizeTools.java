@@ -47,7 +47,7 @@ public class KruizeTools {
     }
 
     @Tool(description = "Retrieves a list of all available recommendations.")
-    public String getAllRecommendations() {
+    public String listAllRecommendations() {
         try {
             List<Recommendations> apiResponse = apiClient.getAllRecommendations(); // Pass null for no name filter
 
@@ -67,7 +67,7 @@ public class KruizeTools {
     private record RecommendationSource(String parentNamespace, Optional<String> sourceName, Optional<RecommendationData> recommendations) {}
 
     @Tool(description = "Retrieves available cost recommendations for the specified experiment name.")
-    public String getCostOptimizedRecommendations(
+    public String listCostOptimizedRecommendations(
             @ToolArg(description = "The name of the experiment to get recommendations for.") String experiment_name) {
         try {
             List<Recommendations> apiResponse = apiClient.getCostOptimizedRecommendations(experiment_name);
