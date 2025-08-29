@@ -16,6 +16,13 @@ public final class RecommendationApiResponseRecords {
             String namespace,
             @JsonProperty("container_name")
             Optional<String> containerName,
+
+            @JsonProperty("experiment_name")
+            String experimentName,
+
+            @JsonProperty("experiment_type")
+            String experimentType,
+
             List<Notification> notifications,
 
             @JsonProperty("current")
@@ -38,7 +45,8 @@ public final class RecommendationApiResponseRecords {
             @JsonProperty("duration_in_hours")
             int durationInHours,
             Optional<ResourceGroup> config,
-            Optional<ResourceGroup> variation
+            Optional<ResourceGroup> variation,
+            Optional<List<Notification>> notifications
     ) {}
 
     // --- Records for navigating the JSON structure ---
