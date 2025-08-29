@@ -176,7 +176,7 @@ public class KruizeTools {
     // Helper record to pass matching sources internally
     private record IdleSource(Recommendations recommendations, RecommendationSource source, Map<String, RecommendationTerm> recommendationTerms) {}
 
-    @Tool(description = "Finds idle workloads based on notification code 323001. Optionally includes cost recommendations data.")
+    @Tool(description = "Retrieves idle workloads based on notification code 323001. Optionally includes cost recommendations data.")
     public String getIdleWorkloads(
             @ToolArg(description = "Set to 'true' to include detailed cost recommendations in the response.")
             boolean includeRecommendations) {
