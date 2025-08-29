@@ -3,6 +3,7 @@ package org.mcp_server;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkiverse.mcp.server.Tool;
+import io.quarkiverse.mcp.server.ToolArg;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import jakarta.inject.Inject;
 import java.util.*;
@@ -172,89 +173,100 @@ public class KruizeTools {
         }
     }
 
+    // Helper record to pass matching sources internally
+    private record IdleSource(Recommendations recommendations, RecommendationSource source, Map<String, RecommendationTerm> recommendationTerms) {}
 
-    @Tool(description = "Retrieves cost recommendations for Idle workloads that have a specific notification with code 323001.")
-    public String getIdleWorkloads() {
+    @Tool(description = "Finds idle workloads based on notification code 323001. Optionally includes cost recommendations data.")
+    public String getIdleWorkloads(
+            @ToolArg(description = "Set to 'true' to include detailed cost recommendations in the response.")
+            boolean includeRecommendations) {
         try {
             List<Recommendations> apiResponse = apiClient.getAllRecommendations();
-            List<FinalCostResult> filteredResults = new ArrayList<>();
 
-            // 1. Loop through each Recommendation
+            List<IdleSource> idleSources = new ArrayList<>();
+
             for (Recommendations recommendations : Optional.ofNullable(apiResponse).orElse(Collections.emptyList())) {
-
-                // 2. Loop through each KubernetesObject
                 for (KubernetesObject k8sObject : Optional.ofNullable(recommendations.kubernetesObjects()).orElse(Collections.emptyList())) {
 
-                    // 3. Create a unified list of sources from containers and namespaces
-                    List<RecommendationSource> sources = new ArrayList<>();
-                    k8sObject.containers().orElse(Collections.emptyList())
-                            .forEach(c -> sources.add(new RecommendationSource(k8sObject.namespace(), Optional.of(c.containerName()), c.recommendations())));
-                    k8sObject.namespaces().stream()
-                            .forEach(n -> sources.add(new RecommendationSource(n.namespace(), Optional.empty(), n.recommendations())));
+                    Stream<RecommendationSource> sourceStream = Stream.concat(
+                            k8sObject.containers().orElse(Collections.emptyList()).stream()
+                                    .map(c -> new RecommendationSource(k8sObject.namespace(), Optional.of(c.containerName()), c.recommendations())),
+                            k8sObject.namespaces().stream()
+                                    .map(n -> new RecommendationSource(n.namespace(), Optional.empty(), n.recommendations()))
+                    );
 
-                    // 4. Loop through each source (container or namespace)
-                    for (RecommendationSource source : sources) {
-                        if (source.recommendations().isEmpty()) continue;
-
-                        List<Notification> notifications = Optional.ofNullable(source.recommendations.get().notifications())
-                                .map(map -> List.copyOf(map.values()))
-                                .orElse(Collections.emptyList());
+                    sourceStream.forEach(source -> {
+                        if (source.recommendations().isEmpty()) return;
 
                         Map<String, TimestampData> dataMap = source.recommendations().get().data();
-                        if (dataMap == null || dataMap.isEmpty()) continue;
+                        if (dataMap == null || dataMap.isEmpty()) return;
 
                         TimestampData timestampData = dataMap.values().iterator().next();
                         Map<String, RecommendationTerm> recommendationTerms = timestampData.recommendationTerms();
-                        if (recommendationTerms == null) continue;
+                        if (recommendationTerms == null) return;
 
-                        // 5. Filter the terms to find only those with the specific Idle notification - "323001"
-                        List<CostRecommendation> matchingRecs = recommendationTerms.entrySet().stream()
-                                .filter(termEntry -> {
-                                    RecommendationEngine costEngine = Optional.ofNullable(termEntry.getValue().recommendationEngines())
+                        boolean hasIdleNotice = recommendationTerms.values().stream()
+                                .anyMatch(term -> {
+                                    RecommendationEngine costEngine = Optional.ofNullable(term.recommendationEngines())
                                             .orElse(Collections.emptyMap()).get("cost");
 
                                     if (costEngine == null || costEngine.notifications() == null) return false;
 
-                                    // The filtering condition
                                     Notification notice = costEngine.notifications().get("323001");
                                     return notice != null && "notice".equals(notice.type());
-                                })
-                                .map(termEntry -> {
-                                    // Map the matching entry to a CostRecommendation object
-                                    RecommendationEngine costEngine = termEntry.getValue().recommendationEngines().get("cost");
-                                    List<Notification> costNotifications = Optional.ofNullable(costEngine)
-                                            .map(RecommendationEngine::notifications)
-                                            .map(map -> List.copyOf(map.values()))
-                                            .orElse(Collections.emptyList());
+                                });
 
-
-                                    return new CostRecommendation(
-                                            termEntry.getKey(),
-                                            termEntry.getValue().durationInHours(),
-                                            Optional.ofNullable(costEngine).map(RecommendationEngine::config),
-                                            Optional.ofNullable(costEngine).map(RecommendationEngine::variation),
-                                            Optional.of(costNotifications) // Add the extracted notifications here
-                                    );
-                                })
-                                .collect(Collectors.toList());
-
-                        // 6. If we found any matches, create a result object and add it to our final list
-                        if (!matchingRecs.isEmpty()) {
-                            filteredResults.add(new FinalCostResult(
-                                    source.parentNamespace(),
-                                    source.sourceName(),
-                                    recommendations.experimentName(),
-                                    recommendations.experimentType(),
-                                    notifications,
-                                    timestampData.current(),
-                                    matchingRecs
-                            ));
+                        if (hasIdleNotice) {
+                            idleSources.add(new IdleSource(recommendations, source, recommendationTerms));
                         }
-                    }
+                    });
                 }
             }
 
-            return objectMapper.writeValueAsString(filteredResults);
+            if (includeRecommendations) {
+                List<IdleWorkloadWithRecommendations> detailedResults = idleSources.stream()
+                        .map(idleSource -> {
+                            List<CostRecommendation> costRecs = idleSource.recommendationTerms().entrySet().stream()
+                                    .map(entry -> {
+                                        RecommendationEngine costEngine = Optional.ofNullable(entry.getValue().recommendationEngines())
+                                                .orElse(Collections.emptyMap()).get("cost");
+
+                                        List<Notification> costNotifications = Optional.ofNullable(costEngine)
+                                                .map(RecommendationEngine::notifications)
+                                                .map(map -> List.copyOf(map.values()))
+                                                .orElse(Collections.emptyList());
+
+                                        return new CostRecommendation(
+                                                entry.getKey(),
+                                                entry.getValue().durationInHours(),
+                                                Optional.ofNullable(costEngine).map(RecommendationEngine::config),
+                                                Optional.ofNullable(costEngine).map(RecommendationEngine::variation),
+                                                Optional.of(costNotifications)
+                                        );
+                                    })
+                                    .collect(Collectors.toList());
+
+                            return new IdleWorkloadWithRecommendations(
+                                    idleSource.source().parentNamespace(),
+                                    idleSource.source().sourceName(),
+                                    idleSource.recommendations().experimentName(),
+                                    idleSource.recommendations().experimentType(),
+                                    costRecs
+                            );
+                        })
+                        .collect(Collectors.toList());
+                return objectMapper.writeValueAsString(detailedResults);
+            } else {
+                List<IdleWorkloadInfo> summaryResults = idleSources.stream()
+                        .map(idleSource -> new IdleWorkloadInfo(
+                                idleSource.source().parentNamespace(),
+                                idleSource.source().sourceName(),
+                                idleSource.recommendations().experimentName(),
+                                idleSource.recommendations().experimentType()
+                        ))
+                        .collect(Collectors.toList());
+                return objectMapper.writeValueAsString(summaryResults);
+            }
 
         } catch (Exception e) {
             return "{\"error\": \"An unexpected error occurred: " + e.getMessage() + "\"}";

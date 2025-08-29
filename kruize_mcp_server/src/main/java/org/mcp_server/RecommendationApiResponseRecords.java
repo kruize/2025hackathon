@@ -11,7 +11,24 @@ import java.util.Optional;
 public final class RecommendationApiResponseRecords {
     private RecommendationApiResponseRecords() {}
 
-    // --- Final, clean output format ---
+    // Record for the summary view (without recommendations)
+    public record IdleWorkloadInfo(
+            String namespace,
+            Optional<String> containerName,
+            @JsonProperty("experiment_name") String experimentName,
+            @JsonProperty("experiment_type") String experimentType
+    ) {}
+
+    // Record for the detailed view (with recommendations)
+    public record IdleWorkloadWithRecommendations(
+            String namespace,
+            Optional<String> containerName,
+            @JsonProperty("experiment_name") String experimentName,
+            @JsonProperty("experiment_type") String experimentType,
+            List<CostRecommendation> costRecommendations
+    ) {}
+
+    // Final, clean output format for cost optimized recommendations
     public record FinalCostResult(
             String namespace,
             @JsonProperty("container_name")
