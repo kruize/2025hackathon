@@ -19,7 +19,20 @@ Use the Maven Wrapper (mvnw) to compile the source code and package it into an e
 
 This command will run tests and create a .jar file in the target/ directory.
 
-### 3. Set the KRUIZE_URL environment variable
+### 4. Deploy kruize using either [local monitoring](https://github.com/kruize/kruize-demos/tree/main/monitoring/local_monitoring) or [bulk](https://github.com/kruize/kruize-demos/tree/main/monitoring/local_monitoring/bulk_demo) kruize-demos scripts
+
+#### 1. Local monitoring demo creates two container experiments and generates recommendations for TFB benchmark workloads
+```
+./local_monitoring_demo.sh -c openshift -e container
+```
+ OR
+
+#### 2. Bulk demo creates experiments and generates recommendations for all the containers present in the cluster
+```
+./bulk_service_demo.sh -c openshift
+```
+
+### 4. Set the KRUIZE_URL environment variable
 
 NOTE: If env variable is not set, KRUIZE_URL will default to http://localhost:8080, refer [application.properties](src/main/resources/application.properties)
 
@@ -28,7 +41,7 @@ export KRUIZE_URL=http://kruize-openshift-tuning.apps.<cluster_name>.lab.upshift
 ```
 
 
-### 4. Testing with the MCP Inspector Tool 🔬
+### 5. Testing with the MCP Inspector Tool 🔬
 
 ##### 1. Install the Inspector Tool
 
@@ -45,7 +58,10 @@ Once the build for Kruize MCP server is ready (e.g., with ./mvnw install), open 
 ```
 npx @modelcontextprotocol/inspector
 ```
-The Inspector will now be connected to your server, allowing you to call your tools. 
+The Inspector will now be connected to your server, allowing you to call your tools.
+
+- NOTE: When testing the Kruize MCP server tools with the Bulk demos recommendations API, increase the timeout in the MCP Inspector tool to prevent timeout errors.
+- Navigate to Configuration increase `Request Timeout` to `60000(60s)` and `Maximum Total Timeout` to `180000(3mins)`
 
 
 ##### 3. Connect to MCP server using Inspector tool
@@ -63,6 +79,6 @@ The Inspector will now be connected to your server, allowing you to call your to
   - `listAllRecommendations` - Retrieves a list of all available recommendations.
   - `getCostOptimizedRecommendations` - Retrieves available cost recommendations for all the experiments.
   - `listAllExperiments` - Retrieves a list of all available experiments.
-  - `getIdleWorkloads` - Retrieves cost recommendations for Idle workloads that have a specific notification with code `323001`
+  - `getIdleWorkloads` - Retrieves idle workloads which have specific notification code `323001`. Optionally includes cost recommendations data.
 
 ![InspectorTool.png](InspectorTool.png)
