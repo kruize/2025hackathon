@@ -61,7 +61,8 @@ The Inspector will now be connected to your server, allowing you to call your to
 - Once successfully connected try to list the tools
 - Current list of tools supported:
   - `listAllRecommendations` - Retrieves a list of all available recommendations.
-  - `listCostOptimizedRecommendations` - Retrieves available cost recommendations for the specified experiment name.
+  - `getCostOptimizedRecommendations` - Retrieves available cost recommendations for all the experiments.
   - `listAllExperiments` - Retrieves a list of all available experiments.
+  - `getIdleWorkloads` - Retrieves cost recommendations for Idle workloads that have a specific notification with code `323001`
 
 ![InspectorTool.png](InspectorTool.png)
