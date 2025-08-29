@@ -11,8 +11,19 @@ def get_raw(namespace: str,
             workload_name: str,
             container_name: str,
             from_: str | None = Query(None, alias="from"),
-            to: str | None = Query(None, alias="to")):
-    return svc_get_raw(namespace, workload_type.value, workload_name, container_name, from_, to)
+            to: str | None = Query(None, alias="to"),
+            last: str | None = Query(None, alias="last"),
+            agg_func: str | None = Query(None, alias="agg_func"),
+            foreach: str | None = Query(None, alias="foreach")):
+    return svc_get_raw(namespace=namespace,
+                       workload_type=workload_type.value,
+                       workload_name=workload_name,
+                       container_name=container_name,
+                       from_str=from_,
+                       to_str=to,
+                       last=last,
+                       agg_func=agg_func,
+                       foreach=foreach)
 
 @router.get("/agg")
 def get_agg(namespace: str,
