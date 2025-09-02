@@ -5,7 +5,7 @@ from ..db import get_db
 from ..queries import SELECT_DATASET_ID, SELECT_SAMPLES_RANGE
 from ..utils.time_utils import parse_human_dt_utc, round_down, fmt_utc, parse_duration_to_secs
 from ..utils.stats import percentile
-from ..constants import DEFAULT_REC_FREQ_SECS, MAX_REC_FREQ_SECS, METRIC_CPU_SECS, METRIC_THR_SECS, METRIC_MEM_USAGE
+from ..constants import DEFAULT_REC_FREQ_SECS, MAX_REC_FREQ_SECS, METRIC_CPU_SECS, METRIC_THR_SECS, METRIC_MEM_USAGE, DEFAULT_REQUESTS_LIMITS
 
 def get_recommendations(namespace: str, workload_type: str, workload_name: str, container_name: str,
                         rec_freq: Optional[str], from_str: Optional[str], to_str: Optional[str]) -> Dict[str, Any]:
@@ -86,14 +86,26 @@ def get_recommendations(namespace: str, workload_type: str, workload_name: str, 
             window_start = t - (freq_secs - 1)
             end_key = fmt_utc(t)
 
-            def build_term(duration_secs:int)->Dict[str,Any]:
-                term_start = t - (duration_secs - 1); term_end=t
+            def build_term(duration_secs: int) -> Dict[str, Any]:
+                term_start = t - (duration_secs - 1)
+                term_end = t
                 cpu_vals = values_in_range(prepared.get(METRIC_CPU_SECS, []), term_start, term_end)
                 thr_vals = values_in_range(prepared.get(METRIC_THR_SECS, []), term_start, term_end)
                 mem_vals = values_in_range(prepared.get(METRIC_MEM_USAGE, []), term_start, term_end)
 
+                base_term = {
+                    "duration_in_hours": round(duration_secs / 3600.0, 3)
+                }
+
                 if not cpu_vals and not mem_vals:
-                    return { "duration_in_hours": round(duration_secs/3600.0,3), "recommendation_engines": {} }
+                    base_term["notifications"] = {
+                        "120001": {
+                            "type": "info",
+                            "message": "There is not enough data available to generate a recommendation.",
+                            "code": 120001
+                        }
+                    }
+                    return base_term
 
                 p60_cpu = percentile(cpu_vals, 60) if cpu_vals else float("nan")
                 p98_cpu = percentile(cpu_vals, 98) if cpu_vals else float("nan")
@@ -103,28 +115,75 @@ def get_recommendations(namespace: str, workload_type: str, workload_name: str, 
                 cost_cpu = max((0.0 if math.isnan(p60_cpu) else p60_cpu) + max_thr, 0.0)
                 perf_cpu = max((0.0 if math.isnan(p98_cpu) else p98_cpu) + max_thr, 0.0)
 
-                mib = 1024.0*1024.0
-                cost_mem_mib = 0.0 if math.isnan(max_mem_bytes) else (max_mem_bytes/mib)
+                mib = 1024.0 * 1024.0
+                cost_mem_mib = 0.0 if math.isnan(max_mem_bytes) else (max_mem_bytes / mib)
                 perf_mem_mib = cost_mem_mib
 
+                # --- Idle CPU ---
+                if cost_cpu < 0.001 and perf_cpu < 0.001:
+                    base_term["notifications"] = {
+                        "323001": {
+                            "type": "info",
+                            "message": "CPU Usage is less than a millicore, No CPU Recommendations can be generated",
+                            "code": 323001
+                        }
+                    }
+                    return base_term
+
+                # Helper: compute variation
+                def diff_config(config, current):
+                    out = {"requests": {}, "limits": {}}
+                    for scope in ["requests", "limits"]:
+                        for res in ["memory", "cpu"]:
+                            cur_amt = current[scope][res]["amount"]
+                            cfg_amt = config[scope][res]["amount"]
+                            out[scope][res] = {
+                                "amount": round(cfg_amt - cur_amt, 3),
+                                "format": current[scope][res]["format"]
+                            }
+                    return out
+
                 engines = {}
-                if cpu_vals or mem_vals:
-                    engines["cost"] = {"config":{"requests":{"memory":{"amount":round(cost_mem_mib,2),"format":"MiB"},
-                                                             "cpu":{"amount":round(cost_cpu,3),"format":"cores"}},
-                                                 "limits":  {"memory":{"amount":round(cost_mem_mib,2),"format":"MiB"},
-                                                             "cpu":{"amount":round(cost_cpu,3),"format":"cores"}}}}
-                    engines["performance"] = {"config":{"requests":{"memory":{"amount":round(perf_mem_mib,2),"format":"MiB"},
-                                                                    "cpu":{"amount":round(perf_cpu,3),"format":"cores"}},
-                                                        "limits":  {"memory":{"amount":round(perf_mem_mib,2),"format":"MiB"},
-                                                                    "cpu":{"amount":round(perf_cpu,3),"format":"cores"}}}}
-                return { "duration_in_hours": round(duration_secs/3600.0,3),
-                         "recommendation_engines": engines }
+
+                cost_cfg = {
+                    "requests": {
+                        "memory": {"amount": round(cost_mem_mib, 2), "format": "MiB"},
+                        "cpu": {"amount": round(cost_cpu, 3), "format": "cores"},
+                    },
+                    "limits": {
+                        "memory": {"amount": round(cost_mem_mib, 2), "format": "MiB"},
+                        "cpu": {"amount": round(cost_cpu, 3), "format": "cores"},
+                    }
+                }
+                engines["cost"] = {
+                    "config": cost_cfg,
+                    "variation": diff_config(cost_cfg, DEFAULT_REQUESTS_LIMITS)
+                }
+
+                perf_cfg = {
+                    "requests": {
+                        "memory": {"amount": round(perf_mem_mib, 2), "format": "MiB"},
+                        "cpu": {"amount": round(perf_cpu, 3), "format": "cores"},
+                    },
+                    "limits": {
+                        "memory": {"amount": round(perf_mem_mib, 2), "format": "MiB"},
+                        "cpu": {"amount": round(perf_cpu, 3), "format": "cores"},
+                    }
+                }
+                engines["performance"] = {
+                    "config": perf_cfg,
+                    "variation": diff_config(perf_cfg, DEFAULT_REQUESTS_LIMITS)
+                }
+
+                base_term["recommendation_engines"] = engines
+                return base_term
 
             recs[end_key] = {
                 "interval_start_time": fmt_utc(window_start),
                 "interval_end_time": fmt_utc(t),
                 "interval_start_utc": window_start,
                 "interval_end_utc": t,
+                "current": DEFAULT_REQUESTS_LIMITS,
                 "recommendation_terms": {
                     "short_term":  build_term(SHORT),
                     "medium_term": build_term(MED),

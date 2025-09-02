@@ -24,3 +24,6 @@ venv/
 # Build/dist
 dist/
 build/
+
+# Generated data
+generated/

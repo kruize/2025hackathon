@@ -3,7 +3,8 @@ from datetime import datetime, timezone, timedelta
 from typing import Tuple
 from ..models import CreateDataRequest, Scenario
 from ..constants import (
-    METRIC_MEM_USAGE, METRIC_MEM_RSS, METRIC_CPU_SECS, METRIC_THR_SECS
+    METRIC_MEM_USAGE, METRIC_MEM_RSS, METRIC_CPU_SECS, METRIC_THR_SECS,
+    CPU_USAGE_HIGH, CPU_USAGE_MEDIUM, CPU_USAGE_LOW
 )
 from ..utils.time_utils import round_down
 
@@ -27,11 +28,20 @@ def generate_series(req: CreateDataRequest, dataset_id: int, conn) -> int:
         MAX_IDLE_CPU_CORES_PER_SEC = 0.0007
         cpu_rate_per_sec = 0.0005
         throttle_rate_per_sec = 0.0
+        usage_pattern = None
     else:
         base_usage = 600 * 1024 * 1024
         base_rss   = 450 * 1024 * 1024
-        cpu_rate_per_sec = 0.08
         throttle_rate_per_sec = 0.003
+
+        # Pick a usage pattern randomly
+        usage_pattern = random.choice(["high", "medium", "low"])
+        if usage_pattern == "high":
+            cpu_min, cpu_max = CPU_USAGE_HIGH
+        elif usage_pattern == "medium":
+            cpu_min, cpu_max = CPU_USAGE_MEDIUM
+        else:
+            cpu_min, cpu_max = CPU_USAGE_LOW
 
     cur = conn.cursor()
     conn.execute("BEGIN")
@@ -45,9 +55,12 @@ def generate_series(req: CreateDataRequest, dataset_id: int, conn) -> int:
         usage = int(round(max(0.0, base_usage * (1.0 + 0.10 * phase + noise))))
         rss   = int(round(max(0.0, base_rss   * (1.0 + 0.10 * phase + noise * 0.5))))
 
-        eff_rate = cpu_rate_per_sec * max(0.2, 1.0 + noise)
         if req.scenario == Scenario.idle:
+            eff_rate = cpu_rate_per_sec * max(0.2, 1.0 + noise)
             eff_rate = min(eff_rate, MAX_IDLE_CPU_CORES_PER_SEC)
+        else:
+            # Pick CPU rate per sec randomly within the chosen pattern
+            eff_rate = random.uniform(cpu_min, cpu_max)
 
         cpu_seconds      += eff_rate * step
         throttle_seconds += throttle_rate_per_sec * step * max(0.2, 1.0 + noise)

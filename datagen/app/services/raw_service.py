@@ -235,22 +235,50 @@ def get_raw(namespace: str, workload_type: str, workload_name: str, container_na
             raise HTTPException(status_code=404,
                                 detail="No aggregated values produced for the requested 'foreach' window.")
 
+
+        # --- Prometheus API style return ---
+        results = []
+        for metric_name, mdata in metrics_out.items() if agg else series.items():
+            if agg:
+                values = [[ts, str(val)] for ts, val in mdata["values"]]
+            else:
+                values = [[ts, str(val)] for ts, val in mdata]
+
+            results.append({
+                "metric": {
+                    "__name__": metric_name,
+                    "namespace": namespace,
+                    workload_type: workload_name,   # e.g. "deployment": "nginx-deployment"
+                    "container": container_name
+                },
+                "values": values
+            })
+
         return {
-            "namespace": namespace,
-            "workload_type": workload_type,
-            "workload_name": workload_name,
-            "container_name": container_name,
-            "aggregation": {
-                "foreach": foreach,
-                "agg_func": agg,
-            },
-            "time_window": {
-                "start": fmt_utc(sel_first),
-                "end": fmt_utc(sel_last),
-                "start_utc_secs": sel_first,
-                "end_utc_secs": sel_last,
-            },
-            "metrics": metrics_out,
+            "status": "success",
+            "data": {
+                "resultType": "matrix",
+                "result": results
+            }
         }
+
+
+        # return {
+        #     "namespace": namespace,
+        #     "workload_type": workload_type,
+        #     "workload_name": workload_name,
+        #     "container_name": container_name,
+        #     "aggregation": {
+        #         "foreach": foreach,
+        #         "agg_func": agg,
+        #     },
+        #     "time_window": {
+        #         "start": fmt_utc(sel_first),
+        #         "end": fmt_utc(sel_last),
+        #         "start_utc_secs": sel_first,
+        #         "end_utc_secs": sel_last,
+        #     },
+        #     "metrics": metrics_out,
+        # }
     finally:
         conn.close()
