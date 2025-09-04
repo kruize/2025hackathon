@@ -35,3 +35,5 @@ DEFAULT_REQUESTS_LIMITS = {
         "cpu": {"amount": 8, "format": "cores"},
     }
 }
+
+COST_PER_HR_PER_VCPU = 1

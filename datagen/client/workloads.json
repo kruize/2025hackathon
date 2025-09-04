@@ -1,0 +1,92 @@
+[
+  {
+    "namespace": "frontend",
+    "workload_type": "deployment",
+    "workload_name": "web-portal",
+    "container_name": "web_portal_container",
+    "scenario": "default",
+    "days": 15,
+    "interval_in_secs": 15
+  },
+  {
+    "namespace": "frontend",
+    "workload_type": "deployment",
+    "workload_name": "api-gateway",
+    "container_name": "api_gateway_container",
+    "scenario": "default",
+    "days": 15,
+    "interval_in_secs": 15
+  },
+  {
+    "namespace": "frontend",
+    "workload_type": "deployment",
+    "workload_name": "auth-service",
+    "container_name": "auth_service_container",
+    "scenario": "idle",
+    "days": 15,
+    "interval_in_secs": 15
+  },
+  {
+    "namespace": "payments",
+    "workload_type": "deployment",
+    "workload_name": "order-service",
+    "container_name": "order_service_container",
+    "scenario": "default",
+    "days": 15,
+    "interval_in_secs": 15
+  },
+  {
+    "namespace": "payments",
+    "workload_type": "deployment",
+    "workload_name": "payment-gateway",
+    "container_name": "payment_gateway_container",
+    "scenario": "default",
+    "days": 15,
+    "interval_in_secs": 15
+  },
+  {
+    "namespace": "payments",
+    "workload_type": "deployment",
+    "workload_name": "cart-service",
+    "container_name": "cart_service_container",
+    "scenario": "default",
+    "days": 15,
+    "interval_in_secs": 15
+  },
+  {
+    "namespace": "payments",
+    "workload_type": "deployment",
+    "workload_name": "billing-service",
+    "container_name": "billing_service_container",
+    "scenario": "idle",
+    "days": 15,
+    "interval_in_secs": 15
+  },
+  {
+    "namespace": "recommendations",
+    "workload_type": "deployment",
+    "workload_name": "search-service",
+    "container_name": "search_service_container",
+    "scenario": "default",
+    "days": 15,
+    "interval_in_secs": 15
+  },
+  {
+    "namespace": "recommendations",
+    "workload_type": "deployment",
+    "workload_name": "recommendation-engine",
+    "container_name": "recommendation_engine_container",
+    "scenario": "default",
+    "days": 15,
+    "interval_in_secs": 15
+  },
+  {
+    "namespace": "recommendations",
+    "workload_type": "deployment",
+    "workload_name": "shipping-service",
+    "container_name": "shipping_service_container",
+    "scenario": "default",
+    "days": 15,
+    "interval_in_secs": 15
+  }
+]

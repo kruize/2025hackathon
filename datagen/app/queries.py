@@ -65,3 +65,10 @@ FROM samples
 WHERE dataset_id = ?
 GROUP BY metric
 """
+
+COST_COUNTS_RANGE = """
+SELECT dataset_id, metric, COUNT(*) AS cnt, MIN(ts_utc) AS min_ts, MAX(ts_utc) AS max_ts
+FROM samples
+WHERE dataset_id = ?
+GROUP BY dataset_id, metric
+"""

@@ -4,6 +4,7 @@ from .routers.datasets import router as datasets_router
 from .routers.metrics import router as metrics_router
 from .routers.cluster import router as cluster_router
 from .routers.recommendations import router as recs_router
+from .routers.cost import router as cost_router
 from .constants import DB_PATH
 from .queries import COUNT_TABLE
 
@@ -44,4 +45,5 @@ app.include_router(datasets_router)
 app.include_router(metrics_router)
 app.include_router(cluster_router)
 app.include_router(recs_router)
+app.include_router(cost_router)
 
