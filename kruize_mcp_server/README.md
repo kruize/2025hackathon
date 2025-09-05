@@ -19,7 +19,7 @@ Use the Maven Wrapper (mvnw) to compile the source code and package it into an e
 
 This command will run tests and create a .jar file in the target/ directory.
 
-### 4. Deploy kruize using either [local monitoring](https://github.com/kruize/kruize-demos/tree/main/monitoring/local_monitoring) or [bulk](https://github.com/kruize/kruize-demos/tree/main/monitoring/local_monitoring/bulk_demo) kruize-demos scripts
+### 3. Deploy kruize using either [local monitoring](https://github.com/kruize/kruize-demos/tree/main/monitoring/local_monitoring) or [bulk](https://github.com/kruize/kruize-demos/tree/main/monitoring/local_monitoring/bulk_demo) kruize-demos scripts
 
 #### 1. Local monitoring demo creates two container experiments and generates recommendations for TFB benchmark workloads
 ```
@@ -82,3 +82,80 @@ The Inspector will now be connected to your server, allowing you to call your to
   - `getIdleWorkloads` - Retrieves idle workloads which have specific notification code `323001`. Optionally includes cost recommendations data.
 
 ![InspectorTool.png](InspectorTool.png)
+
+### Kruize MCP Server for OpenShift
+
+This guide provides the steps to containerize and deploy the Kruize MCP server on an OpenShift cluster.
+
+#### 1. Build and Push the Container Image 📦
+
+##### A. Build the Image
+
+Run the docker build command from project's root directory. Remember to replace <registry>/<username>/kruize-mcp-server with your actual image repository.
+
+```
+docker build -t <registry>/<username>/kruize-mcp-server:latest .
+```
+##### B. Push the Image
+
+Push the newly built image to your container registry.
+```
+docker push <registry>/<username>/kruize-mcp-server:<tag>
+```
+
+#### 2. Deploy on OpenShift 🚀
+
+Manifest - manifests/kruize_mcp_server.yaml has the necessary OpenShift resources.
+
+##### Apply the Manifest
+
+Use the oc tool to apply the manifest to your cluster.
+
+```
+oc apply -f manifests/kruize_mcp_server.yaml -n openshift-tuning
+```
+
+#### 3. Expose the Service
+
+To access the server from outside the cluster, create a Route.
+
+##### A. Create the Route
+
+Expose the mcp-server-service, created in the previous step.
+
+```
+oc expose service kruize-mcp-server-service -n openshift-tuning
+```
+
+##### B. Get the URL
+
+Find the public URL for the mcp server.
+
+```
+oc get route kruize-mcp-server-service -n openshift-tuning --template='{{ .spec.host }}'
+```
+
+#### 4. Verification and Testing 🔬
+
+##### A. Check Pod Status
+
+Ensure mcp-server pod is running and ready (1/1).
+```
+oc get pods -n openshift-tuning
+```
+
+##### B. View Logs
+
+Check the application logs using the pod name.
+
+```
+oc logs -f <mcp-server-pod-name> -n openshift-tuning
+```
+
+##### C. Connect the Inspector Tool
+
+Use the URL from step 3 to connect MCP Inspector tool. The endpoint for the Streamable HTTP transport is /mcp/.
+
+```
+npx @modelcontextprotocol/inspector http://<kruize-mcp-server-route-url>/mcp/
+```
