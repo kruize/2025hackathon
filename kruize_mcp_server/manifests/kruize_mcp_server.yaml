@@ -20,7 +20,7 @@ spec:
             - name: KRUIZE_URL
               # Use the stable Service DNS name.
               # Format: http://<service-name>.<namespace>:<port>
-              value: "http://kruize-service.openshift-tuning:8080"
+              value: "http://kruize.openshift-tuning:8080"
           ports:
             - containerPort: 8080
           resources:
