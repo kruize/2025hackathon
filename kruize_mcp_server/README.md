@@ -50,7 +50,7 @@ You only need to run this command once to install the tool globally on your mach
 ```
 npm install -g @modelcontextprotocol/inspector@0.11.0
 ```
-
+#### Steps for STDIO transport layer:
 ##### 2. Run the Inspector Tool
 
 Once the build for Kruize MCP server is ready (e.g., with ./mvnw install), open a new terminal window and run the following command to launch the inspector and connect to your server.
@@ -73,6 +73,37 @@ The Inspector will now be connected to your server, allowing you to call your to
   ```
   -jar /home/username/2025hackathon/kruize_mcp_server/target/kruize_mcp_server-1.0-SNAPSHOT-runner.jar`
   ```
+
+  
+#### Steps for Streamable HTTP transport layer:
+You'll need two separate terminal windows: one for the server and one for the Inspector tool.
+##### 2. Run the MCP Server JAR
+  - `Terminal 1`: Run the MCP Server JAR
+  - Navigate to your project's directory.
+  - Run the executable JAR file. This will start the Quarkus web server.
+    ```
+    java -jar /home/username/2025hackathon/kruize_mcp_server/target/kruize_mcp_server-1.0-SNAPSHOT-runner.jar
+    ```
+
+  You will see log output indicating the server has started and is listening on a port (e.g., Listening on: http://0.0.0.0:8080).
+ 
+##### 3. Connect to MCP server using Inspector tool
+  - `Terminal 2`: Run the Inspector Tool
+  - Open a new terminal window.
+  - Launch the MCP Inspector and point it to your local server's URL.
+    ```
+    npx @modelcontextprotocol/inspector http://localhost:8080/mcp/
+    ```
+
+  The Inspector will connect to your local Java process over HTTP, allowing you to test the streamable transport without needing to deploy.
+
+- `Note`: 
+    -   The port number in the URL (8080) must match the quarkus.http.port value in your application.properties file.
+    -   When testing the Kruize MCP server tools with the Bulk demos recommendations API, increase the timeout in the MCP Inspector tool to prevent timeout errors.
+    -   Navigate to Configuration increase `Request Timeout` to `60000(60s)` and `Maximum Total Timeout` to `180000(3mins)`
+
+
+##### 4. Using Inspector tool
 - Click on `Connect` button
 - Once successfully connected try to list the tools
 - Current list of tools supported:
