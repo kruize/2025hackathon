@@ -10,5 +10,5 @@ WORKDIR /deployments
 
 # Copy the executable JAR from the build stage
 COPY --from=build /usr/src/app/target/kruize_mcp_server-1.0-SNAPSHOT-runner.jar /deployments/app.jar
-EXPOSE 8081
+EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/deployments/app.jar"]
