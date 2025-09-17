@@ -77,5 +77,8 @@ def generate_series(req: CreateDataRequest, dataset_id: int, conn) -> int:
         )
         num_samples += len(rows)
 
+        if ts % 21600 == 0:
+            print(f"[{datetime.utcfromtimestamp(ts).isoformat()}Z] Generated {num_samples} rows so far...")
+
     conn.commit()
     return num_samples

@@ -89,12 +89,26 @@ for workload in workloads:
 
 generated_path = os.path.join("generated")
 
-cost_resp = requests.get(COST_DATA_URL)
-cost_resp.raise_for_status()
-cost_file = os.path.join(generated_path, "costs.json")
+daily_res = {
+    "resolution": "daily"
+}
+
+monthly_res = {
+    "resolution": "monthly"
+}
+cost_daily_resp = requests.get(COST_DATA_URL, params=daily_res)
+cost_daily_resp.raise_for_status()
+cost_file = os.path.join(generated_path, "costs_daily.json")
 with open(cost_file, "w") as f:
-    json.dump(cost_resp.json(), f, indent=2)
-    print(f"[SUCCESS] Saved costs.json")
+    json.dump(cost_daily_resp.json(), f, indent=2)
+    print(f"[SUCCESS] Saved costs_daily.json")
+
+cost_mon_resp = requests.get(COST_DATA_URL, params=monthly_res)
+cost_mon_resp.raise_for_status()
+cost_mon_file = os.path.join(generated_path, "costs_monthly.json")
+with open(cost_mon_file, "w") as f:
+    json.dump(cost_mon_resp.json(), f, indent=2)
+    print(f"[SUCCESS] Saved costs_monthly.json")
 
 cluster_resp = requests.get(CLUSTER_DATA_URL)
 cluster_resp.raise_for_status()
