@@ -1,0 +1,6 @@
+"Can you look into the documents ingested and list all unique containers and projects that have cost data?",
+"Based on the ingested documents, can you provide detailed cost summaries for each container and project?",
+"Are there duplicate containers or projects? If yes, can you consolidate their cost data and present unique entries?",
+"Analyze the cost trend for each unique container and project over multiple days. Note any increases, decreases, or stable periods with percentages.",
+"Summarize all container and project cost trends in one response with a summary table showing daily and monthly cost increase percentages and the expected trend direction (increasing, stable, decreasing).",
+"Can you re-search the documents and include all the projects and containers available in the summary table, ensuring no relevant data is missed?",

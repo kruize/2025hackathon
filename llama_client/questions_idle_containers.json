@@ -1,0 +1,6 @@
+"Based solely on the information found in the provided JSON documents, extract all entries that include container_name,  namespace. Do not use any external information or assumptions. Use only the data from the given documents. ",
+"Include cpu recommendations, profile, engine for each container.",
+"Can you provide the cpu recommendations for each engine, profile separately for a container and namespace in a table format",
+"Can you re-check the document and list containers which has a message ** CPU Usage is less than a millicore, No CPU Recommendations can be generated **",
+"Can you please re-check the documents again and get the  container has cpu current config greater than recommendations in table format?",
+"Can you re-check the documents ingested and list containers where cpu current config is greater than cpu recommendations",
