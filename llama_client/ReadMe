@@ -7,7 +7,7 @@ These Python scripts interact with a LlamaStack deployment for document ingestio
 ## 1. Ingest Documents
 
 Command to upload documents into the vector database for RAG:
-`python ingest_docs.py [folder] [--base_url BASE_URL] [--vector_db_id VECTOR_DB_ID]`
+`python ingest_docs.py [folder] [--base_url=BASE_URL] [--vector_db_id=VECTOR_DB_ID]`
 
 - **`folder`** (required): Path to folder containing knowledge files to ingest (e.g., `./cost-data`).
 - **`--base_url`**: Llama Stack base URL (default: `http://localhost:8321`).
@@ -20,12 +20,13 @@ Command to upload documents into the vector database for RAG:
 ## 2. Chat with RAG
 
 Command to chat interactively or using a questions file against the ingested knowledge base:
-`python chat_with_rag.py [--base_url BASE_URL] [--tavily_api_key TAVILY_API_KEY] [--vector_db_id VECTOR_DB_ID] [--questions_file QUESTIONS_FILE]`
+`python chat_with_rag.py [--base_url=BASE_URL] [--tavily_api_key=TAVILY_API_KEY] [--vector_db_id=VECTOR_DB_ID] [--questions_file=QUESTIONS_FILE] [--instructions_file=INSTRUCTIONS_FILE]`
 
 - **`--base_url`**: Llama Stack base URL (default: `http://localhost:8321`).
 - **`--tavily_api_key`**: Tavily API key (required if using Tavily enhanced search).
 - **`--vector_db_id`**: Optional vector database ID to specify which vector DB to query. If omitted, the system queries the latest available vector database by default.
 - **`--questions_file`**: Optional file containing questions (one per line) to feed into the system.
+- **`--instructions_file`**: Optional file containing instructions for the agent before create.
 
 Below are the questions_file available to try:
 questions_idle_containers.json: Contains a list of questions designed to identify which containers have CPU usage idle.
@@ -34,13 +35,8 @@ questions_cost_optimization_v1.json, questions_cost_optimization_v2.json: Contai
 ## 3. Create a New Vector Database [ to customize ]
 
 Use the following script to create a new vector database in your LlamaStack deployment. This is useful to start a fresh vector DB with an automatically assigned unique ID.
-`python create_vector_db.py --base_url <BASE_URL>`
+`python create_vector_db.py --base_url=<BASE_URL>`
 - **`--base_url`**: Llama Stack base URL (default: `http://localhost:8321`).
 
 ---
-
-
-
-
-
 

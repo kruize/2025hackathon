@@ -7,8 +7,7 @@ import argparse
 
 from llama_stack_client import LlamaStackClient, Agent
 
-
-def create_agent(client, llm_model, vector_db_id):
+def create_agent(client, llm_model, vector_db_id, instructions_file=None):
     tools = [
         {
             "name": "builtin::rag/knowledge_search",
@@ -20,17 +19,38 @@ def create_agent(client, llm_model, vector_db_id):
         },
     ]
 
+    default_instructions = """
+    You are a reasoning agent. For each question:
+
+    1. Think step-by-step.
+    2. Decide if you need to invoke a tool (knowledge_search or websearch).
+    3. Provide the tool name and input when invoking.
+    4. Observe tool outputs and refine your reasoning.
+    5. When confident, give the final answer.
+
+    Always reason carefully before acting.
+    """
+
+    # Read instructions from file if provided
+    if instructions_file:
+        with open(instructions_file, 'r', encoding='utf-8') as f:
+            react_instructions = f.read()
+    else:
+        react_instructions = default_instructions
+
+    print(f"Instructions used by Agent are: {react_instructions}")
+
     return Agent(
         client,
         model=llm_model,
-        instructions="You are a helpful assistant. Use retrieved knowledge or web search results to answer questions.",
+        instructions=react_instructions,
         tools=tools,
         sampling_params={"max_tokens": 1024, "temperature": 0.7},
         tool_config={"tool_choice": "auto", "fallback_behavior": "continue_without_tools"}
     )
 
 
-def main(base_url, folder_path=None, questions_file=None, tavily_api_key=None, vector_db_id=None):
+def main(base_url, folder_path=None, questions_file=None, tavily_api_key=None, vector_db_id=None, instructions_file=None):
     if not vector_db_id or not str(vector_db_id).strip():
         if os.path.exists(".vector_db_id") and (content := open(".vector_db_id").read().strip()):
             vector_db_id = content
@@ -56,7 +76,7 @@ def main(base_url, folder_path=None, questions_file=None, tavily_api_key=None, v
     llm_model = next(m.identifier for m in models if m.model_type == "llm")
     print(f"📌 LLM Model: {llm_model}")
 
-    agent = create_agent(client, llm_model, vector_db_id)
+    agent = create_agent(client, llm_model, vector_db_id, instructions_file)
     session_id = agent.create_session(session_name=f"rag_chat_{uuid.uuid4().hex[:6]}")
     print(f"🧠 Session created: {session_id}")
 
@@ -112,8 +132,9 @@ if __name__ == "__main__":
     parser.add_argument("--questions_file", help="Optional file with one question per line")
     parser.add_argument("--tavily_api_key", help="Tavily Search API key")
     parser.add_argument("--vector_db_id", help="Reuse existing vector DB ID")
+    parser.add_argument("--instructions_file", default=None, help="Pass the instructions for the agent in a file")
 
     args = parser.parse_args()
-    main(args.base_url, args.folder, args.questions_file, args.tavily_api_key, args.vector_db_id)
+    main(args.base_url, args.folder, args.questions_file, args.tavily_api_key, args.vector_db_id, args.instructions_file)
 
 
