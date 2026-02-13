@@ -21,7 +21,7 @@ spec:
           env:
             - name: KRUIZE_URL
               # Update this if your Kruize service has a different name or namespace
-              value: "http://kruize.kruize:8080"
+              value: "http://<minikube-ip>:<kruize-port>"
             - name: QUARKUS_HTTP_PORT
               # Port 8082 to avoid conflict with Kruize (8080, 8081)
               value: "8082"
