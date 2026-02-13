@@ -5,7 +5,7 @@ RUN mvn -f /usr/src/app/pom.xml -B clean package
 
 RUN ls -R /usr/src/app/target # For debugging
 
-FROM openjdk:21-jdk
+FROM eclipse-temurin:21-jdk
 WORKDIR /deployments
 
 # Copy the executable JAR from the build stage
