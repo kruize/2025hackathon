@@ -45,7 +45,7 @@ kubectl get pods -n monitoring | grep kruize
 
 ### Step 1: Deploy to Minikube (1 minute)
 
-**Note:** Before deploying, update the manifest file with your image name and preferred port if needed.
+**Note:** Before deploying, update the manifest file with KRUIZE_URL to `http://<minikube-ip>:<kruize-port>`.
 
 ```bash
 # Deploy using the provided manifest
@@ -54,11 +54,6 @@ kubectl apply -f manifests/kruize_mcp_server_minikube.yaml
 # Wait for pod to be ready
 kubectl wait --for=condition=ready pod -l app=kruize-mcp-server -n monitoring --timeout=120s
 ```
-
-**Customization Options:**
-- **Change Image:** Edit `manifests/kruize_mcp_server_minikube.yaml` and update the `image:` field to your image
-- **Change Port:** Update `QUARKUS_HTTP_PORT`, `containerPort`, `port`, `targetPort`, and `nodePort` to your preferred port
-- **Change Kruize URL:** Update `KRUIZE_URL` if your Kruize service has a different name or namespace
 
 ### Step 2: Verify Deployment (30 seconds)
 
@@ -129,9 +124,8 @@ Your Kruize MCP Server is now running and accessible via the Inspector tool.
 For quick testing, use this single command:
 
 ```bash
-kubectl create namespace kruize 2>/dev/null; \
-kubectl run kruize-mcp-server --image=quay.io/shbirada/kruize_mcp_server:0.1 \
-  --port=8082 --env="KRUIZE_URL=http://kruize.kruize:8080" \
+kubectl run kruize-mcp-server --image=quay.io/shbirada/kruize-mcp-server:latest \
+  --port=8082 --env="KRUIZE_URL=http://<minikube-ip>:<kruize-port>" \
   --env="QUARKUS_HTTP_PORT=8082" -n monitoring && \
 kubectl expose pod kruize-mcp-server --type=NodePort --port=8082 \
   --target-port=8082 --name=kruize-mcp-server-service -n monitoring && \
