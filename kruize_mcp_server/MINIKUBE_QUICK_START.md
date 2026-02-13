@@ -90,7 +90,7 @@ npm install -g @modelcontextprotocol/inspector@0.11.0
 npx @modelcontextprotocol/inspector http://localhost:8082/mcp/
 ```
 
-**In Browser (opens automatically at http://localhost:5173):**
+**In Browser (opens automatically):**
 
 1. **Verify URL:**
    - Should show: `http://localhost:8082/mcp/`
