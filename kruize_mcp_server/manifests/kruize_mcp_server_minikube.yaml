@@ -16,7 +16,7 @@ spec:
       containers:
         - name: kruize-mcp-server
           # Update this to your image name and tag
-          image: quay.io/shbirada/kruize_mcp_server:0.1
+          image: quay.io/shbirada/kruize-mcp-server:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: KRUIZE_URL
